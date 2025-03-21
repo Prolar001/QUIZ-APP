@@ -13,7 +13,7 @@ The **Simple Quiz App** is a lightweight and user-friendly quiz application desi
 ## Installation
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-username/simple-quiz-app.git
+   git clone https://github.com/Prolar001/simple-quiz-app.git
    ```
 2. Navigate to the project folder:
    ```sh
