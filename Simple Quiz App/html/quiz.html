@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Science Quiz</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        body {
+            background-color: #4B0082;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 600px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #question-number {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #question {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .choice-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .choice-button {
+            width: 90%;
+            padding: 10px;
+            margin: 5px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+            text-align: left;
+        }
+
+        .choice-button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .selected {
+            background-color: #00E5D1 !important;
+            border-color: #007bff;
+            color: black;
+            font-weight: bold;
+        }
+
+        #timer {
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 45%;
+        }
+
+        #back-button {
+            background-color: #FF4500;
+            color: white;
+            display: none;
+        }
+
+        #next-button {
+            background-color: #00E5D1;
+            color: black;
+            margin-left: auto;
+        }
+
+        #finish-button {
+            background-color: #28a745;
+            color: white;
+            display: none;
+        }
+
+        #review-container {
+            display: none;
+        }
+
+        .review-item {
+            text-align: left;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .correct-answer {
+            background-color: #d4edda;
+            border-left: 5px solid green;
+            padding: 10px;
+        }
+
+        .incorrect-answer {
+            background-color: #f8d7da;
+            border-left: 5px solid red;
+            padding: 10px;
+        }
+
+        .review-buttons {
+            margin-top: 20px;
+        }
+
+        .review-buttons button {
+            width: 45%;
+        }
+
+        #final-score {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="quiz-container">
+        <p id="question-number"></p>
+        <h2 id="question"></h2>
+        <div id="choices-container" class="choice-container"></div>
+        <p id="timer">Time Left: <span id="time">60</span> seconds</p>
+        <div class="button-group">
+            <button id="back-button">Back</button>
+            <button id="next-button">Next</button>
+            <button id="finish-button">Finish</button>
+        </div>
+    </div>
+
+    <div class="container" id="review-container">
+        <h2>Review Your Answers</h2>
+        <p id="final-score"></p>
+        <div id="review-list"></div>
+        <div class="review-buttons">
+            <button id="retry-button">Retry</button>
+            <button id="leaderboard-button">Leaderboard</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const quizContainer = document.getElementById("quiz-container");
+            const reviewContainer = document.getElementById("review-container");
+            const choicesContainer = document.getElementById("choices-container");
+            const nextButton = document.getElementById("next-button");
+            const backButton = document.getElementById("back-button");
+            const finishButton = document.getElementById("finish-button");
+            const timerElement = document.getElementById("time");
+            const reviewList = document.getElementById("review-list");
+            const finalScoreElement = document.getElementById("final-score");
+
+            const questions = [
+                { question: "What is the chemical symbol for water?", choices: ["A. O2", "B. H2O", "C. CO2", "D. NaCl"], answer: 1 },
+                { question: "What is the powerhouse of the cell?", choices: ["A. Nucleus", "B. Mitochondria", "C. Ribosome", "D. Cytoplasm"], answer: 1 },
+                { question: "Which planet is known as the Red Planet?", choices: ["A. Venus", "B. Mars", "C. Jupiter", "D. Saturn"], answer: 1 },
+            ];
+
+            let currentQuestionIndex = 0;
+            let selectedChoices = Array(questions.length).fill(null);
+            let timer = 60;
+            let timerInterval;
+
+            function startTimer() {
+                clearInterval(timerInterval);
+                timerElement.innerText = timer;
+                timerInterval = setInterval(() => {
+                    if (timer > 0) {
+                        timer--;
+                        timerElement.innerText = timer;
+                    } else {
+                        clearInterval(timerInterval);
+                        showReview();
+                    }
+                }, 1000);
+            }
+
+            function loadQuestion() {
+                const q = questions[currentQuestionIndex];
+                document.getElementById("question").innerText = q.question;
+                document.getElementById("question-number").innerText = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+                
+                choicesContainer.innerHTML = "";
+                q.choices.forEach((choice, i) => {
+                    const btn = document.createElement("button");
+                    btn.classList.add("choice-button");
+                    btn.innerText = choice;
+                    if (selectedChoices[currentQuestionIndex] === i) btn.classList.add("selected");
+                    btn.addEventListener("click", () => {
+                        document.querySelectorAll(".choice-button").forEach(btn => btn.classList.remove("selected"));
+                        btn.classList.add("selected");
+                        selectedChoices[currentQuestionIndex] = i;
+                    });
+                    choicesContainer.appendChild(btn);
+                });
+
+                backButton.style.display = currentQuestionIndex > 0 ? "inline-block" : "none";
+                nextButton.style.display = currentQuestionIndex < questions.length - 1 ? "inline-block" : "none";
+                finishButton.style.display = currentQuestionIndex === questions.length - 1 ? "inline-block" : "none";
+            }
+
+            function showReview() {
+                quizContainer.style.display = "none";
+                reviewContainer.style.display = "block";
+
+                let score = 0;
+                reviewList.innerHTML = "";
+                questions.forEach((q, i) => {
+                    const isCorrect = selectedChoices[i] === q.answer;
+                    if (isCorrect) score++;
+
+                    reviewList.innerHTML += `
+                        <div class="review-item ${isCorrect ? 'correct-answer' : 'incorrect-answer'}">
+                            ${q.question}<br>
+                            <strong>Correct Answer:</strong> ${q.choices[q.answer]}<br>
+                            <strong>Your Answer:</strong> ${selectedChoices[i] !== null ? q.choices[selectedChoices[i]] : "No answer"}
+                        </div>
+                    `;
+                });
+
+                finalScoreElement.innerText = `Your Score: ${score}/${questions.length}`;
+            }
+
+            nextButton.addEventListener("click", () => { currentQuestionIndex++; loadQuestion(); });
+            backButton.addEventListener("click", () => { currentQuestionIndex--; loadQuestion(); });
+            finishButton.addEventListener("click", showReview);
+            document.getElementById("retry-button").addEventListener("click", () => location.reload());
+            document.getElementById("leaderboard-button").addEventListener("click", () => {
+            window.location.href = "leaderboard.html"; 
+        });
+
+
+            startTimer();
+            loadQuestion();
+        });
+    </script>
+</body>
+</html>
